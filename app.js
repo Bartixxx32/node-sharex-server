@@ -16,7 +16,7 @@ const md = new Remarkable("full", {
 
 // APP SETTINGS
 app.use(bodyParser.text())
-app.use(express.static("./uploads/", {
+app.use(express.static("./files/", {
   extensions: c.admin.allowed
 }))
 app.use(express.static("./pages/", {
@@ -109,12 +109,12 @@ app.post("/api/shortener", (req, res) => {
       res.send("NOT_A_VALID_URL")
       return res.end()
     } else {
-      let stream = fs.createWriteStream(`./uploads/${fileName}.html`)
+      let stream = fs.createWriteStream(`./files/url/${fileName}.html`)
       stream.once("open", fd => {
         stream.write(`<meta http-equiv="refresh" content="0; url=${url}" />`)
         stream.end()
         if (monitorChannel !== null) bot.createMessage(monitorChannel, `\`\`\`MARKDOWN\n[NEW][SHORT URL]\n[URL](${url})\n[NEW](${req.headers.host}/${fileName})\n[IP](${userIP})\n\`\`\``)
-        res.write(`http://${req.headers.host}/${fileName}`)
+        res.write(`http://${req.headers.host}/url/${fileName}`)
         return res.end()
       })
     }
@@ -134,7 +134,7 @@ app.post("/api/paste", (req, res) => {
       return console.log(`Unauthorized User | File Upload | ${userIP}`)
     }
     let oldpath = files.fdata.path
-    let newpath = `./uploads/${fileName + files.fdata.name.toString().match(/(\.)+([a-zA-Z0-9]+)+/g, "").toString()}`;
+    let newpath = `./files/paste/${fileName + files.fdata.name.toString().match(/(\.)+([a-zA-Z0-9]+)+/g, "").toString()}`;
     if (!c.paste.allowed.includes(files.fdata.name.substring(files.fdata.name.lastIndexOf(".") + 1, files.fdata.name.length))) {
       res.write(`http://${req.headers.host}/ERR_ILLEGAL_FILE_TYPE`)
       return res.end()
@@ -146,7 +146,7 @@ app.post("/api/paste", (req, res) => {
       } else {
         fs.move(oldpath, newpath, err => {
           fs.readFile(newpath, "utf-8", function read(err, data) {
-            let stream = fs.createWriteStream(`./uploads/${fileName}.html`)
+            let stream = fs.createWriteStream(`./files/paste/${fileName}.html`)
             stream.once("open", fd => {
               let cleaned = data.replace(/>/g, "&gt")
               cleaned = cleaned.replace(/</g, "&lt")
@@ -157,10 +157,10 @@ app.post("/api/paste", (req, res) => {
                 <meta name="theme-color" content="#DC603A">
                 <meta property="og:title" content="HPaste">
                 <meta property="og:description" content="${data.match(/.{1,297}/g)[0]}...">
-                <link rel="stylesheet" href="atom-one-dark.css">
-                <link rel="stylesheet" href="paste.css">
-                <script src="highlight.pack.js"></script>
-                <script src="highlightjs-line-numbers.min.js"></script>
+                <link rel="stylesheet" href="/static/atom-one-dark.css">
+                <link rel="stylesheet" href="/static/paste.css">
+                <script src="/static/highlight.pack.js"></script>
+                <script src="/static/highlightjs-line-numbers.min.js"></script>
                 </head>
                 <body>
                 <pre><code id="code">${data}</code></pre>
@@ -172,7 +172,7 @@ app.post("/api/paste", (req, res) => {
               fs.unlink(newpath, err => {
                 if (err) return console.log(err)
               });
-              res.write(`http://${req.headers.host}/${fileName}`)
+              res.write(`http://${req.headers.host}/paste/${fileName}`)
               if (monitorChannel !== null) bot.createMessage(monitorChannel, `\`\`\`MARKDOWN\n[NEW PASTE]\n[IP](${userIP})\n\`\`\`\nhttp://${req.headers.host}/${fileName}`)
               return res.end()
             })
@@ -196,7 +196,7 @@ app.post("/api/files", (req, res) => {
       return console.log(`Unauthorized User | File Upload | ${userIP}`)
     }
     let oldpath = files.fdata.path
-    let newpath = `./uploads/${fileName + files.fdata.name.toString().match(/(\.)+([a-zA-Z0-9]+)+/g, "").toString()}`
+    let newpath = `./files/file/${fileName + files.fdata.name.toString().match(/(\.)+([a-zA-Z0-9]+)+/g, "").toString()}`
     if (fields.key === c.admin.key) {
       if (Math.round((files.fdata.size / 1024) / 1000) > c.admin.maxUploadSize) {
         if (monitorChannel !== null) bot.createMessage(monitorChannel, `\`\`\`MARKDOWN\n[FAILED UPLOAD][ADMIN]\n[FILE](${files.fdata.name})\n[SIZE](${Math.round(files.fdata.size / 1024)}KB)\n[TYPE](${files.fdata.type})\n[IP](${userIP})\n\n[ERROR](ERR_FILE_TOO_BIG)\`\`\``)
@@ -206,7 +206,7 @@ app.post("/api/files", (req, res) => {
         fs.move(oldpath, newpath, err => {
           if (files.fdata.name.substring(files.fdata.name.lastIndexOf(".") + 1, files.fdata.name.length).toLowerCase() === "md" && c.markdown) {
             fs.readFile(newpath, "utf-8", function read(err, data) {
-              let stream = fs.createWriteStream(`./uploads/${fileName}.html`)
+              let stream = fs.createWriteStream(`./files/file/${fileName}.html`)
               stream.once("open", fd => {
                 stream.write(`
                 <!DOCTYPE html>
@@ -217,8 +217,8 @@ app.post("/api/files", (req, res) => {
                 <meta property="og:description" content="${data.match(/.{1,297}/g)[0]}...">
                 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
                 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
-                <script src="highlight.pack.js"></script>
-                <script src="highlightjs-line-numbers.min.js"></script>
+                <script src="/static/highlight.pack.js"></script>
+                <script src="/static/highlightjs-line-numbers.min.js"></script>
                 </head>
                 <style>
                 body {
@@ -243,7 +243,7 @@ app.post("/api/files", (req, res) => {
           }
           if (monitorChannel !== null) bot.createMessage(monitorChannel, `\`\`\`MARKDOWN\n[NEW UPLOAD][ADMIN]\n[SIZE](${Math.round(files.fdata.size / 1024)}KB)\n[TYPE](${files.fdata.type})\n[IP](${userIP})\`\`\`\nhttp://${req.headers.host}/${fileName}`)
           if (err) return res.write(err)
-          res.write(`http://${req.headers.host}/${fileName}`)
+          res.write(`http://${req.headers.host}/file/${fileName}`)
           return res.end()
         })
       }
@@ -262,7 +262,7 @@ app.post("/api/files", (req, res) => {
           fs.move(oldpath, newpath, err => {
             if (files.fdata.name.substring(files.fdata.name.lastIndexOf(".") + 1, files.fdata.name.length).toLowerCase() === "md" && c.markdown) {
               fs.readFile(newpath, "utf-8", function read(err, data) {
-                let stream = fs.createWriteStream(`./uploads/${fileName}.html`)
+                let stream = fs.createWriteStream(`./files/file/${fileName}.html`)
                 stream.once("open", fd => {
                   stream.write(`
                   <!DOCTYPE html>
@@ -273,8 +273,8 @@ app.post("/api/files", (req, res) => {
                   <meta property="og:description" content="${data.match(/.{1,297}/g)[0]}...">
                   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
                   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
-                  <script src="highlight.pack.js"></script>
-                  <script src="highlightjs-line-numbers.min.js"></script>
+                  <script src="/static/highlight.pack.js"></script>
+                  <script src="/static/highlightjs-line-numbers.min.js"></script>
                   </head>
                   <style>
                   body {
@@ -299,7 +299,7 @@ app.post("/api/files", (req, res) => {
             }
             if (monitorChannel !== null) bot.createMessage(monitorChannel, `\`\`\`MARKDOWN\n[NEW UPLOAD][USER]\n[SIZE](${Math.round(files.fdata.size / 1024)}KB)\n[TYPE](${files.fdata.type})\n[IP](${userIP})\n\`\`\`\nhttp://${req.headers.host}/${fileName}`)
             if (err) return res.write(err)
-            res.write(`http://${req.headers.host}/${fileName}`)
+            res.write(`http://${req.headers.host}/file/${fileName}`)
             return res.end()
           })
         }

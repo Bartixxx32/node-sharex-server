@@ -1,5 +1,5 @@
 const express = require("express")
-const fs = require("fs")
+const fs = require("fs-extra")
 const app = express()
 const bodyParser = require("body-parser")
 const path = require("path")
@@ -144,7 +144,7 @@ app.post("/api/paste", (req, res) => {
         res.write(`http://${req.headers.host}/ERR_FILE_TOO_BIG`) 
         return res.end()
       } else {
-        fs.rename(oldpath, newpath, err => {
+        fs.move(oldpath, newpath, err => {
           fs.readFile(newpath, "utf-8", function read(err, data) {
             let stream = fs.createWriteStream(`./uploads/${fileName}.html`)
             stream.once("open", fd => {
@@ -203,7 +203,7 @@ app.post("/api/files", (req, res) => {
           res.write(`http://${req.headers.host}/ERR_FILE_TOO_BIG`) 
           return res.end()
       } else {
-        fs.rename(oldpath, newpath, err => {
+        fs.move(oldpath, newpath, err => {
           if(files.fdata.name.substring(files.fdata.name.lastIndexOf(".")+1, files.fdata.name.length).toLowerCase() === "md" && c.markdown) { 
             fs.readFile(newpath, "utf-8", function read(err, data) {
               let stream = fs.createWriteStream(`./uploads/${fileName}.html`)
@@ -259,7 +259,7 @@ app.post("/api/files", (req, res) => {
             res.write(`http://${req.headers.host}/ERR_ILLEGAL_FILE_TYPE`) 
             return res.end()
         } else {
-          fs.rename(oldpath, newpath, err => {
+          fs.move(oldpath, newpath, err => {
             if(files.fdata.name.substring(files.fdata.name.lastIndexOf(".")+1, files.fdata.name.length).toLowerCase() === "md" && c.markdown) {
               fs.readFile(newpath, "utf-8", function read(err, data) {
                 let stream = fs.createWriteStream(`./uploads/${fileName}.html`)
